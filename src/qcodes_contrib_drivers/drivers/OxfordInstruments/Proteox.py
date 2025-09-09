@@ -7,27 +7,17 @@ import time
 import subprocess
 import platform
 import numpy as np
+import pathlib
+import sys
 
 from qcodes.instrument import VisaInstrument
 from qcodes.parameters import MultiParameter
-
-from qcodes_contrib_drivers.drivers.OxfordInstruments._decsvisa.src.decs_visa_tools.decs_visa_settings import PORT
-from qcodes_contrib_drivers.drivers.OxfordInstruments._decsvisa.src.decs_visa_tools.decs_visa_settings import HOST
-from qcodes_contrib_drivers.drivers.OxfordInstruments._decsvisa.src.decs_visa_tools.decs_visa_settings import SHUTDOWN
-from qcodes_contrib_drivers.drivers.OxfordInstruments._decsvisa.src.decs_visa_tools.decs_visa_settings import WRITE_DELIM
 
 '''
 
     Please see the README.md file in this directory for setup instructions.
 
 '''
-
-#############################################
-#    Configuration settings required     #
-#############################################
-
-# supply the file path from your working directory to the decs_visa.py file
-decs_visa_path = "../../src/qcodes_contrib_drivers/drivers/OxfordInstruments/_decsvisa/src/decs_visa.py"
 
 #############################################
 #    System configuration settings     #
@@ -56,7 +46,7 @@ HE3_FLOW_METER_FITTED=False
 
 class MagneticFieldParameters(MultiParameter):
     """
-    Parameter for retrieving X, Y, and Z components of the magnetic field. 
+    Parameter for retrieving X, Y, and Z components of the magnetic field.
 
     To Retrieve all three parameters via `instrument.Magnetic_Field_Vector()`
     """
@@ -97,7 +87,7 @@ class MagneticFieldParameters(MultiParameter):
 
 class MagnetCurrentParameters(MultiParameter):
     """
-    Parameter for retrieving X, Y, and Z components of the magnet current. 
+    Parameter for retrieving X, Y, and Z components of the magnet current.
 
     Retrieve all three parameters via `instrument.Magnet_Current_Vector()`
     """
@@ -138,15 +128,27 @@ class MagnetCurrentParameters(MultiParameter):
 
 class oiDECS(VisaInstrument):
     """ Main implementation of the oi.DECS driver """
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, decsvisa_path, **kwargs):
+        """
+        name (str): instrument name e.g. 'Proteox'
+        decsvisa_path (str): supply the file path from your working directory to the decs_visa.py file
+        """
+
+        path = pathlib.Path(decsvisa_path)
+        decsvisa_parent = path.parent
+        sys.path.append(decsvisa_parent)
+
+        from _decsvisa.src.decs_visa_tools.decs_visa_settings import PORT
+        from _decsvisa.src.decs_visa_tools.decs_visa_settings import HOST
+        from _decsvisa.src.decs_visa_tools.decs_visa_settings import WRITE_DELIM
 
         running_on = platform.platform()
         if running_on.startswith("Windows"):
             print(f"Running on {running_on} - start subprocess without PIPEd output")
-            subprocess.Popen(["python", decs_visa_path])
+            subprocess.Popen(["python", decsvisa_path])
         else:
             print(f"Running on {running_on} - start subprocess with PIPEd output")
-            subprocess.Popen(["python3", decs_visa_path], stdout=subprocess.PIPE)
+            subprocess.Popen(["python3", decsvisa_path], stdout=subprocess.PIPE)
 
         time.sleep(1)
 
@@ -155,7 +157,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "PT1_Head_Temperature",
             unit="K",
-            label=name,
+            label="PT1 Head Temperature",
             get_cmd="get_PT1_T1",
             get_parser=float
         )
@@ -163,7 +165,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "PT1_Plate_Temperature",
             unit="K",
-            label=name,
+            label="PT1 Plate Temperature",
             get_cmd="get_DR1_T",
             get_parser=float
         )
@@ -171,7 +173,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "PT2_Head_Temperature",
             unit="K",
-            label=name,
+            label="PT2 Head Temperature",
             get_cmd="get_PT2_T1",
             get_parser=float
         )
@@ -179,7 +181,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "PT2_Plate_Temperature",
             unit="K",
-            label=name,
+            label="PT2 Plate Temperature",
             get_cmd="get_DR2_T",
             get_parser=float
         )
@@ -187,7 +189,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "Sorb_Temperature",
             unit="K",
-            label=name,
+            label="Sorb Temperature",
             get_cmd="get_SRB_T",
             get_parser=float
         )
@@ -195,7 +197,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "Still_Plate_Temperature",
             unit="K",
-            label=name,
+            label="Still Plate Temperature",
             get_cmd="get_STILL_T",
             get_parser=float
         )
@@ -203,7 +205,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "Still_Heater_Power",
             unit="W",
-            label=name,
+            label="Still Heater Power",
             get_cmd="get_STILL_H",
             set_cmd=partial(self._param_setter, "set_STILL_H"),
             get_parser=float
@@ -212,7 +214,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "Cold_Plate_Temperature",
             unit="K",
-            label=name,
+            label="Cold Plate Temperature",
             get_cmd="get_CP_T",
             get_parser=float
         )
@@ -220,7 +222,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "Mixing_Chamber_Temperature",
             unit="K",
-            label=name,
+            label="Mixing Chamber Temperature",
             get_cmd="get_MC_T",
             set_cmd=partial(self._param_setter, "set_MC_T"),
             get_parser=float
@@ -229,7 +231,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "Mixing_Chamber_Temperature_Target",
             unit="K",
-            label=name,
+            label="Mixing Chamber Temperature Target",
             get_cmd="get_MC_T_SP",
             set_cmd=partial(self._param_setter, "set_MC_T"),
             get_parser=float
@@ -238,7 +240,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "Mixing_Chamber_Heater_Power",
             unit="W",
-            label=name,
+            label="Mixing Chamber Heater Power",
             get_cmd="get_MC_H",
             set_cmd=partial(self._param_setter, "set_MC_H"),
             get_parser=float
@@ -247,7 +249,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "Sample_Temperature",
             unit="K",
-            label=name,
+            label="Sample Temperature",
             get_cmd="get_SAMPLE_T",
             set_cmd=partial(self._param_setter, "set_SAMPLE_T"),
             get_parser=float
@@ -256,7 +258,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "OVC_Pressure",
             unit="Pa",
-            label=name,
+            label="OVC Pressure",
             get_cmd="get_OVC_P",
             get_parser=float
         )
@@ -264,7 +266,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "P1_Pressure",
             unit="Pa",
-            label=name,
+            label="P1 Pressure",
             get_cmd="get_P1_P",
             get_parser=float
         )
@@ -272,7 +274,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "P2_Pressure",
             unit="Pa",
-            label=name,
+            label="P2 Pressure",
             get_cmd="get_P2_P",
             get_parser=float
         )
@@ -280,7 +282,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "P3_Pressure",
             unit="Pa",
-            label=name,
+            label="P3 Pressure",
             get_cmd="get_P3_P",
             get_parser=float
         )
@@ -288,7 +290,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "P4_Pressure",
             unit="Pa",
-            label=name,
+            label="P4 Pressure",
             get_cmd="get_P4_P",
             get_parser=float
         )
@@ -296,7 +298,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "P5_Pressure",
             unit="Pa",
-            label=name,
+            label="P5 Pressure",
             get_cmd="get_P5_P",
             get_parser=float
         )
@@ -304,7 +306,7 @@ class oiDECS(VisaInstrument):
         self.add_parameter(
             "P6_Pressure",
             unit="Pa",
-            label=name,
+            label="P6 Pressure",
             get_cmd="get_P6_P",
             get_parser=float
         )
@@ -313,7 +315,7 @@ class oiDECS(VisaInstrument):
             self.add_parameter(
                 "He3_Flow",
                 unit="mol/s",
-                label=name,
+                label="He3 Flow",
                 get_cmd="get_3He_F",
                 get_parser=float
             )
@@ -322,14 +324,14 @@ class oiDECS(VisaInstrument):
             self.add_parameter(
                 "Magnet_Temperature",
                 unit="K",
-                label=name,
+                label="Magnet Temperature",
                 get_cmd="get_MAG_T",
                 get_parser=float
             )
 
             self.add_parameter(
                 "Magnet_State",
-                label=name,
+                label="Magnet State",
                 get_cmd="get_MAG_STATE",
                 get_parser=str,
                 val_mapping={'Holding Not Persistent': '0',
@@ -352,7 +354,8 @@ class oiDECS(VisaInstrument):
                 name = "Magnet_Current_Vector",
                 parameter_class=MagnetCurrentParameters,
             )
-            # qcodes can't use multiparameters as setpoint, this dummy bypasses it.  
+
+            # qcodes can't use multiparameters as setpoint, this dummy bypasses it.
             self.add_parameter(
                 name='Bx',
                 unit='T',
@@ -378,12 +381,10 @@ class oiDECS(VisaInstrument):
                 get_parser=None
             )
 
-
-
             if MAGNET_HAS_SWITCH:
                 self.add_parameter(
                     "Switch_State",
-                    label=name,
+                    label="Switch State",
                     get_cmd="get_SWZ_STATE",
                     get_parser=float,
                     val_mapping={'OPEN': 1.0, 'CLOSED': 0.0}
@@ -399,7 +400,7 @@ class oiDECS(VisaInstrument):
         B_str = self.ask("get_MAG_VEC")
         B_array = B_str.split(',')
         return float(B_array[0]), float(B_array[1]), float(B_array[2])
-    
+
     def _get_field_current_data(self):
         I_str = self.ask("get_MAG_CURR_VEC")
         I_array = I_str.split(',')
@@ -571,20 +572,20 @@ class oiDECS(VisaInstrument):
             stable_mean: float - difference between the mean and target value to be achieved by the last 30 temperature readings
             stable_std: float - standard deviation to be achieved by the last 30 temperature readings
             time_between_readings: float - time between taking temperature readings
-        
+
         """
         target_temp = self.Mixing_Chamber_Temperature_Target()
 
         print(f'Waiting for temperature to stablilise at {target_temp} K.')
-        
-        #take 30 temperature readings 
+
+        #take 30 temperature readings
         t1 = time.time()
         t_array = np.zeros(30)
         for n in range(0,30):
             time.sleep(time_between_readings)
             temp = self.Mixing_Chamber_Temperature()
             t_array[n] = float(temp)
-            
+
         stab = False
         while stab is False:
             time.sleep(time_between_readings)
@@ -594,10 +595,10 @@ class oiDECS(VisaInstrument):
             t_array = t_array[1:]
             s = np.std(t_array)
             m = np.abs(np.mean(t_array) - target_temp)
-            
+
             if (s < stable_std) and (m < stable_mean):
                 stab = True
-                
+
         t2 = time.time()
         tt = t2-t1
         print(f'Temperature = {t_array[-1]} K')
@@ -627,6 +628,6 @@ class oiDECS(VisaInstrument):
 
     def close(self) -> None:
         # Kill off the WAMP and socket connections
+        from _decsvisa.src.decs_visa_tools.decs_visa_settings import SHUTDOWN
         self.write(SHUTDOWN)
         return super().close()
-
