@@ -126,6 +126,51 @@ class MagnetCurrentParameters(MultiParameter):
         """
         print("*** Current cannot be set directly with this function ***")
 
+class Magnet_Field_Target(MultiParameter):
+    """
+    Parameter for retrieving X, Y and Z components of the magnet field target.
+
+    Retrieve all three parameters via `instrument.Magnet_Feild_Target()`
+    Retrieve single parameter using index e.g. `instrument.Magnet_Field_Target()[2]`
+    
+    """
+    def __init__(
+        self, name, instrument, **kwargs: Any
+    ) -> None:
+        super().__init__(
+            name=name,
+            instrument=instrument,
+            names=("X_Target", "Y_Target", "Z_Target"),
+            labels=(
+                f"{instrument} X_Target",
+                f"{instrument} Y_Target",
+                f"{instrument} Z_Target",
+            ),
+            units=("T", "T", "T"),
+            setpoints=((),(),()),
+            shapes=((), (), ()),
+            snapshot_get=True,
+            snapshot_value=True,
+            **kwargs,
+        )
+
+    def get_raw(self) -> tuple[float, ...]:
+        """
+        Gets the values of field target from the instrument
+        """
+        assert isinstance(self.instrument, oiDECS)
+        Bx, By, Bz = self.instrument._get_field_target_data()
+        return Bx, By, Bz
+
+    def set_raw(self, value) -> None:
+        """
+        Disabled setter for this read-only parameter.
+
+        This method overrides the base class setter to prevent users from
+        attempting to directly modify magnet currents through this parameter
+        """
+        print("*** Field target cannot be set directly with this function ***")
+        
 class oiDECS(VisaInstrument):
     """ Main implementation of the oi.DECS driver """
     def __init__(self, name, decsvisa_path, **kwargs):
@@ -353,6 +398,11 @@ class oiDECS(VisaInstrument):
             self.add_parameter(
                 name = "Magnet_Current_Vector",
                 parameter_class=MagnetCurrentParameters,
+            )
+
+            self.add_parameter(
+                name = "Magnet_Field_Target",
+                parameter_class=Magnet_Field_Target,
             )
 
             # qcodes can't use multiparameters as setpoint, this dummy bypasses it.
