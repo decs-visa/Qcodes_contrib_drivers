@@ -456,6 +456,18 @@ class oiDECS(VisaInstrument):
         I_array = I_str.split(',')
         return float(I_array[0]), float(I_array[1]), float(I_array[2])
 
+    def _get_field_target_data(self) -> tuple[float, float, float]:
+        """
+        Low-level instrument query for the magnetic field vector target.
+        The instrument returns a comma-separated string in the form: "Bx,By,Bz"
+            
+        Returns:
+            (tuple of float) Current values ``(Bx, By, Bz)`` in Tesla.
+        """
+        B_str = self.ask("get_MAG_TARGET")
+        B_array = B_str.split(',')
+        return float(B_array[0]), float(B_array[1]), float(B_array[2])
+
     def mixing_chamber_heater_off(self):
         """Function to turn off MC heater"""
         self._param_setter('set_MC_H_OFF', 0)
