@@ -1,4 +1,10 @@
 ######################
+This reposistory is no longer in use. Please see https://github.com/decs-visa for the new forked repo of qcodes_contrib_driver.
+######################
+
+
+
+######################
 QCoDeS contrib drivers
 ######################
 
